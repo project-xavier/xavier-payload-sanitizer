@@ -1,0 +1,3 @@
+$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.host == null )]
+$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.cpu_total_cores == 0 )]
+$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.ems_ref == null )]
