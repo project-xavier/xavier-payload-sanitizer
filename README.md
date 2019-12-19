@@ -8,7 +8,7 @@ Sets failing elements to be 'retired' in the output file so the report generatio
 1. From the project root run (to include project dependencies in jar)
 1. `mvn clean assembly:assembly -DdescriptorId=jar-with-dependencies`
 
-##Usage
+## Usage
 
 There are 3 possible input arguments which can be included in any order:
 
