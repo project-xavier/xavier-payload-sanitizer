@@ -36,9 +36,11 @@ public class XavierPayloadSanitizer
         String jsonFileToBeSanitized = readInputFile(inputFileName, "Input file to sanitize");
 
         String jsonIssuesConditions = readInputFile(issuesConditionsJSONFileName, "Issues Conditions file ");
-        String[] issues = jsonIssuesConditions.split("\\R");
+        List<String> vmsIssues = splitConditions(jsonIssuesConditions,"###vms");
+        List<String> hostsIssues = splitConditions(jsonIssuesConditions,"###hosts");
+        List<String> clustersIssues = splitConditions(jsonIssuesConditions,"###clusters");
 
-        String outputJsonString = sanitize(jsonFileToBeSanitized, issues);
+        String outputJsonString = sanitize(jsonFileToBeSanitized, vmsIssues, hostsIssues,clustersIssues);
 
         writeStringToFile(outputFileName, outputJsonString);
 
@@ -60,16 +62,81 @@ public class XavierPayloadSanitizer
         }
     }
 
-    private static String sanitize(String fileToBeSanitized, String[] issuesConditions)
+
+
+    private static List<String> splitConditions(String inputConditionsString, String sectionHeader)
     {
-        Configuration conf = Configuration.builder().options(Option.AS_PATH_LIST,Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS).build();
+        if (inputConditionsString == null)
+        {
+            throw new RuntimeException("No issues conditions found");
+        }
+        List<String> returnIssues = new ArrayList<>();
+        String[] issues = inputConditionsString.split("\\R");
+        boolean currentSectionWanted = false;
+        for (String issue:issues)
+        {
+            if(issue.equals(sectionHeader))
+            {
+                currentSectionWanted = true;
+                continue;
+            }else if (issue.startsWith("###"))
+            {
+                currentSectionWanted = false;
+                continue;
+            }
+            if(currentSectionWanted)
+            {
+                returnIssues.add(issue);
+            }
+        }
+
+        return returnIssues;
+
+    }
+
+    private static String sanitize(String fileToBeSanitized, List<String> vmsIssuesConditions, List<String> hostsIssuesConditions, List<String> clustersIssuesConditions)
+    {
+        String vmsInvalidElementIds = findInvalidElements(fileToBeSanitized, vmsIssuesConditions);
+        String hostsInvalidElementIds = findInvalidElements(fileToBeSanitized, hostsIssuesConditions);
+        String clustersInvalidElementIds = findInvalidElements(fileToBeSanitized, clustersIssuesConditions);
+
+        String resultString = retireVms(fileToBeSanitized,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.id in [" + vmsInvalidElementIds+ "])]");
+        resultString = retireVms(resultString,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.host.ems_ref in [" + hostsInvalidElementIds+ "])]");
+
+
+
+        return resultString;
+    }
+
+
+
+    private static String findInvalidElements(String fileToBeSanitized, List<String> issuesConditions)
+    {
+        Configuration conf = Configuration.builder().options(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS).build();
+        DocumentContext parsedFile = JsonPath.using(conf).parse(fileToBeSanitized);
+
+        List<Object> errorIds = new LinkedList<>();
+
+        issuesConditions.forEach(issuesCondition -> {
+            errorIds.addAll(parsedFile.read(issuesCondition));
+        });
+
+        List<String> errorIdStringsList = new ArrayList<>();
+
+        errorIds.forEach(id -> errorIdStringsList.add(String.valueOf(id)));
+
+        return String.join(",",errorIdStringsList);
+    }
+
+    private static String retireVms(String fileToBeSanitized, String vmSelectionQuery)
+    {
+        Configuration conf = Configuration.builder().options(Option.AS_PATH_LIST, Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS).build();
         DocumentContext parsedFile = JsonPath.using(conf).parse(fileToBeSanitized);
 
         List<String> errorPaths = new ArrayList<String>();
 
-        Arrays.stream(issuesConditions).forEach(issuesCondition -> {
-            errorPaths.addAll(parsedFile.read(issuesCondition));
-        });
+        errorPaths.addAll(parsedFile.read(vmSelectionQuery));
+
 
         errorPaths.stream().forEach( errorPath -> parsedFile.put(errorPath,"retired",new Integer(1)));
 
