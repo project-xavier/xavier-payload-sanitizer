@@ -33,7 +33,7 @@ public class XavierPayloadSanitizer
             }
         });
 
-        String jsonFileToBeSanitized = readInputFile(inputFileName, "Input file to sanitize");
+        String jsonFileToBeSanitized = readInputFile(inputFileName, "Input file to sanitize ");
 
         String jsonIssuesConditions = readInputFile(issuesConditionsJSONFileName, "Issues Conditions file ");
         List<String> vmsIssues = splitConditions(jsonIssuesConditions,"###vms");
