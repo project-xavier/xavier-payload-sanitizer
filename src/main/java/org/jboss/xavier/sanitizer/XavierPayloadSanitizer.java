@@ -3,16 +3,21 @@ package org.jboss.xavier.sanitizer;
 import com.jayway.jsonpath.*;
 
 import java.io.*;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class XavierPayloadSanitizer
 {
     private static String inputFileName;
     private static String outputFileName;
-    private static String issuesConditionsJSONFileName;
+    private static String issuesConditionsForJSONFileName;
 
     public static void main(final String[] args)
     {
@@ -29,20 +34,32 @@ public class XavierPayloadSanitizer
 
             if( arg.equals("--issues"))
             {
-                issuesConditionsJSONFileName = argsList.get(argsList.indexOf(arg) + 1);
+                issuesConditionsForJSONFileName = argsList.get(argsList.indexOf(arg) + 1);
             }
         });
 
+        if(issuesConditionsForJSONFileName == null || issuesConditionsForJSONFileName.equals(""))
+        {
+            URL url = XavierPayloadSanitizer.class.getClassLoader().getResource("issues_conditions.txt");
+            issuesConditionsForJSONFileName = url.getPath();
+        }
+
         String jsonFileToBeSanitized = readInputFile(inputFileName, "Input file to sanitize ");
 
-        String jsonIssuesConditions = readInputFile(issuesConditionsJSONFileName, "Issues Conditions file ");
+        String jsonIssuesConditions = readInputFile(issuesConditionsForJSONFileName, "Issues Conditions file ");
         List<String> vmsIssues = splitConditions(jsonIssuesConditions,"###vms");
         List<String> hostsIssues = splitConditions(jsonIssuesConditions,"###hosts");
         List<String> clustersIssues = splitConditions(jsonIssuesConditions,"###clusters");
+        try
+        {
+            String outputJsonString = sanitize(jsonFileToBeSanitized, vmsIssues, hostsIssues, clustersIssues);
 
-        String outputJsonString = sanitize(jsonFileToBeSanitized, vmsIssues, hostsIssues,clustersIssues);
-
-        writeStringToFile(outputFileName, outputJsonString);
+            writeStringToFile(outputFileName, outputJsonString);
+        }
+        catch(InvalidJsonException ije)
+        {
+            throw new RuntimeException(inputFileName + " is not a json-formatted file");
+        }
 
     }
 
@@ -52,9 +69,14 @@ public class XavierPayloadSanitizer
         {
             throw new RuntimeException(description + "path not specified");
         }
+        Path inputPath = Paths.get(inputFile);
+        if (!Files.exists(inputPath))
+        {
+            throw new RuntimeException(description + "path does not exist. Path=" + inputPath.toString());
+        }
         try
         {
-            return new String(Files.readAllBytes(Paths.get(inputFile)), StandardCharsets.UTF_8);
+            return new String(Files.readAllBytes(inputPath), StandardCharsets.UTF_8);
         }
         catch(IOException ioe)
         {
@@ -100,8 +122,8 @@ public class XavierPayloadSanitizer
         String hostsInvalidElementIds = findInvalidElements(fileToBeSanitized, hostsIssuesConditions);
         String clustersInvalidElementIds = findInvalidElements(fileToBeSanitized, clustersIssuesConditions);
 
-        String resultString = retireVms(fileToBeSanitized,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.id in [" + vmsInvalidElementIds+ "])]");
-        resultString = retireVms(resultString,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.host.ems_ref in [" + hostsInvalidElementIds+ "])]");
+        String resultString = markVmsAsRetired(fileToBeSanitized,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.id in [" + vmsInvalidElementIds+ "])]");
+        resultString = markVmsAsRetired(resultString,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.host.ems_ref in [" + hostsInvalidElementIds+ "])]");
 
 
 
@@ -128,7 +150,7 @@ public class XavierPayloadSanitizer
         return String.join(",",errorIdStringsList);
     }
 
-    private static String retireVms(String fileToBeSanitized, String vmSelectionQuery)
+    private static String markVmsAsRetired(String fileToBeSanitized, String vmSelectionQuery)
     {
         Configuration conf = Configuration.builder().options(Option.AS_PATH_LIST, Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS).build();
         DocumentContext parsedFile = JsonPath.using(conf).parse(fileToBeSanitized);
@@ -148,11 +170,13 @@ public class XavierPayloadSanitizer
         if (path == null || path.isEmpty())
         {
             String[] splitPath = inputFileName.split("\\.");
-            path = splitPath[0].concat("_sanitized.json");
+            DateFormat df = new SimpleDateFormat("YYYYMMDDHHmm");
+            String nowAsString = df.format(Calendar.getInstance().getTime());
+            path = splitPath[0].concat("_sanitized").concat(nowAsString).concat(".json");
         }
 
         try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(path), "utf-8"))) {
+                new FileOutputStream(path), StandardCharsets.UTF_8))) {
             writer.write(fileText);
         }
         catch(FileNotFoundException fnfe)

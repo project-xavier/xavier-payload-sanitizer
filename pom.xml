@@ -50,6 +50,11 @@
                         <descriptorRefs>
                             <descriptorRef>jar-with-dependencies</descriptorRef>
                         </descriptorRefs>
+                        <archive>
+                            <manifest>
+                                <mainClass>org.jboss.xavier.sanitizer.XavierPayloadSanitizer</mainClass>
+                            </manifest>
+                        </archive>
                     </configuration>
                 </plugin>
             </plugins>

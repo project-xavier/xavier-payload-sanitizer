@@ -25,9 +25,9 @@ There are 3 possible input arguments which can be included in any order:
 1. `--output` followed by the desired path to the sanitized output file. If this argument is omitted or has a value of null or empty, the output file will be produced in the same folder as the input file with a file name based on the input file name with _sanitized.json at the end.
 
     eg an input file name of input.json will result in an output file named input_sanitized.json
-1. `--issues` followed by the path to the issues conditions file to use.
+1. `--issues` followed by the path to the issues conditions file to use. If this argument is not supplied the issues conditions file shipped inside the jar will be used as a default. 
 
 The tool is intended to be used from the command line, eg running from the same folder as the jar:
 
-`java -cp xavier-payload-sanitizer-0.0.1-SNAPSHOT-jar-with-dependencies.jar org.jboss.xavier.sanitizer.XavierPayloadSanitizer --input /{path to input file}/cfme_inventory_0.json --issues /{path to issues conditions file}/issues_conditions.json --output /{path to output file}/sanitizedJson.json`
+`java -jar xavier-payload-sanitizer-0.0.1-SNAPSHOT-jar-with-dependencies.jar --input /{path to input file}/cfme_inventory_0.json --issues /{path to issues conditions file}/issues_conditions.txt --output /{path to output file}/sanitizedJson.json`
 
