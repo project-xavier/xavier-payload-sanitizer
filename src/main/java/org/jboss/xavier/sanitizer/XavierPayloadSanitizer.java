@@ -18,6 +18,7 @@ public class XavierPayloadSanitizer
     private static String inputFileName;
     private static String outputFileName;
     private static String issuesConditionsForJSONFileName;
+    private static List<String> failingVMPaths = new ArrayList<>();
 
     public static void main(final String[] args)
     {
@@ -125,7 +126,7 @@ public class XavierPayloadSanitizer
         String resultString = markVmsAsRetired(fileToBeSanitized,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.id in [" + vmsInvalidElementIds+ "])]");
         resultString = markVmsAsRetired(resultString,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.host.ems_ref in [" + hostsInvalidElementIds+ "])]");
 
-
+        printRetiredVMList(fileToBeSanitized);
 
         return resultString;
     }
@@ -160,9 +161,28 @@ public class XavierPayloadSanitizer
         errorPaths.addAll(parsedFile.read(vmSelectionQuery));
 
 
-        errorPaths.stream().forEach( errorPath -> parsedFile.put(errorPath,"retired",new Integer(1)));
+        errorPaths.stream().forEach( errorPath -> {
+            parsedFile.put(errorPath,"retired",new Integer(1));
+        });
+
+        failingVMPaths.addAll(errorPaths);
 
         return parsedFile.jsonString();
+    }
+
+    private static void printRetiredVMList(String fileToBeSanitized)
+    {
+        Configuration conf = Configuration.builder().options(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS).build();
+        DocumentContext parsedFile = JsonPath.using(conf).parse(fileToBeSanitized);
+
+        List<Integer> retiredIds = new ArrayList<Integer>();
+
+        failingVMPaths.stream().forEach( errorPath -> {
+            retiredIds.addAll(parsedFile.read(errorPath + ".id"));
+        });
+
+        Collections.sort(retiredIds);
+        retiredIds.forEach(id -> System.out.println("VM marked as retired: id=" + id.toString()));
     }
 
     private static void writeStringToFile(String path, String fileText)
