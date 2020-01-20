@@ -1,0 +1,15 @@
+{
+  "ManageIQ::Providers::Vmware::InfraManager": [
+    {
+      "vms": [
+        {
+          "id": 1,
+          "cpu_total_cores": 2,
+          "ems_ref": "vm-12220",
+          "host": null
+        }
+      ]
+    }
+  ]
+}
+
