@@ -18,10 +18,11 @@ public class XavierPayloadSanitizer
     private static String inputFileName;
     private static String outputFileName;
     private static String issuesConditionsForJSONFileName;
-    private static List<String> failingVMPaths = new ArrayList<>();
+    private static List<String> failingVMPaths;
 
     public static void main(final String[] args)
     {
+        failingVMPaths = new ArrayList<>();
         List<String> argsList = Arrays.asList(args);
         argsList.forEach(arg -> {
             if( arg.equals("--input"))
@@ -56,6 +57,8 @@ public class XavierPayloadSanitizer
             String outputJsonString = sanitize(jsonFileToBeSanitized, vmsIssues, hostsIssues, clustersIssues);
 
             writeStringToFile(outputFileName, outputJsonString);
+
+            printRetiredVMList(outputJsonString);
         }
         catch(InvalidJsonException ije)
         {
@@ -126,7 +129,6 @@ public class XavierPayloadSanitizer
         String resultString = markVmsAsRetired(fileToBeSanitized,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.id in [" + vmsInvalidElementIds+ "])]");
         resultString = markVmsAsRetired(resultString,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.host.ems_ref in [" + hostsInvalidElementIds+ "])]");
 
-        printRetiredVMList(fileToBeSanitized);
 
         return resultString;
     }
@@ -182,7 +184,7 @@ public class XavierPayloadSanitizer
         });
 
         Collections.sort(retiredIds);
-        retiredIds.forEach(id -> System.out.println("VM marked as retired: id=" + id.toString()));
+        retiredIds.forEach(id -> System.out.println("VM in file " + outputFileName + " marked as retired: id=" + id.toString()));
     }
 
     private static void writeStringToFile(String path, String fileText)
@@ -193,6 +195,7 @@ public class XavierPayloadSanitizer
             DateFormat df = new SimpleDateFormat("YYYYMMDDHHmm");
             String nowAsString = df.format(Calendar.getInstance().getTime());
             path = splitPath[0].concat("_sanitized").concat(nowAsString).concat(".json");
+            outputFileName = path;
         }
 
         try (Writer writer = new BufferedWriter(new OutputStreamWriter(

@@ -22,10 +22,11 @@ public class XavierPayloadSanitizerTest {
 //        final List<String> inputFileNames = Arrays.asList("vm_with_null_host.json");
 
         // This does not work
-        final List<String> inputFileNames = Arrays.asList("vm_with_null_host.json", "vm_without_host.json", "vm_with_empty_host.json");
+        final List<String> inputFileNames = Arrays.asList(
+                "vm_with_empty_host.json", "vm_with_zero_total_cores.json","vm_with_null_host.json", "vm_without_host.json");
 
 
-        final String issuesFileName = "issues_conditions.json";
+        final String issuesFileName = "issues_conditions.txt";
         URL issuesURL = Thread.currentThread().getContextClassLoader().getResource(issuesFileName);
         Assert.assertNotNull(issuesFileName + " not found", issuesURL);
         String issues = new File(issuesURL.toURI()).getAbsolutePath();
@@ -34,17 +35,19 @@ public class XavierPayloadSanitizerTest {
             URL inputURL = Thread.currentThread().getContextClassLoader().getResource(inputFileName);
             Assert.assertNotNull(inputFileName + " not found", inputURL);
             String input = new File(inputURL.toURI()).getAbsolutePath();
+            String output = input.replace(".json", "_sanitized.json");
 
 
-            String[] args = {"--input", input, "--issues", issues};
-            XavierPayloadSanitizer.main(args);
+            String[] args = {"--input", input, "--issues", issues, "--output", output};
+            XavierPayloadSanitizer sanitizer = new XavierPayloadSanitizer();
+            sanitizer.main(args);
 
 
             Path sanitizedFilePath = Paths.get(input).resolveSibling(inputFileName.replace(".json", "_sanitized.json"));
             Assert.assertTrue("Sanitized file not found for input=" + inputFileName, Files.exists(sanitizedFilePath));
 
             String sanitizedFileContent = new String(Files.readAllBytes(sanitizedFilePath), StandardCharsets.UTF_8);
-            Assert.assertTrue("input=" + inputFileName + " should contain 'retired'", sanitizedFileContent.contains("retired"));
+            Assert.assertTrue("file=" + output + " should contain 'retired'", sanitizedFileContent.contains("retired"));
         }
     }
 }
