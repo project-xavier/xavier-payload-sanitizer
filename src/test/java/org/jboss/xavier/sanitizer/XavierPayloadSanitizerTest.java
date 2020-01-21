@@ -23,7 +23,9 @@ public class XavierPayloadSanitizerTest {
 
         // This does not work
         final List<String> inputFileNames = Arrays.asList(
-                "vm_with_empty_host.json", "vm_with_zero_total_cores.json","vm_with_null_host.json", "vm_without_host.json");
+                "vm_with_empty_host.json", "vm_with_zero_total_cores.json",
+                "vm_with_null_host.json", "vm_without_host.json",
+                "host_with_no_cluster.json","vm_with_null_ems_ref.json");
 
 
         final String issuesFileName = "issues_conditions.txt";
