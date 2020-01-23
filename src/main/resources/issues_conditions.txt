@@ -1,0 +1,9 @@
+###vms
+$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.host == null )].id
+$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(!@.host )].id
+$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.host.length() == 0 )].id
+$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.cpu_total_cores == 0 )].id
+$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.ems_ref == null )].id
+###hosts
+$.ManageIQ::Providers::Vmware::InfraManager[*].hosts[?(@.ems_cluster == null )].ems_ref
+###clusters
