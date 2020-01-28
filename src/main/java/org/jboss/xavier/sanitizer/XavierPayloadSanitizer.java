@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class XavierPayloadSanitizer
 {
@@ -93,6 +94,13 @@ public class XavierPayloadSanitizer
         }
     }
 
+    private static String getShippedIssuesConditions()
+    {
+        InputStream in = XavierPayloadSanitizer.class.getClassLoader().getResourceAsStream("issues_conditions.txt");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        return reader.lines().collect(Collectors.joining("\n"));
+    }
+
 
 
     private static List<String> splitConditions(String inputConditionsString, String sectionHeader)
@@ -129,7 +137,6 @@ public class XavierPayloadSanitizer
     {
         String vmsInvalidElementIds = findInvalidElements(fileToBeSanitized, vmsIssuesConditions);
         String hostsInvalidElementIds = findInvalidElements(fileToBeSanitized, hostsIssuesConditions);
-        String clustersInvalidElementIds = findInvalidElements(fileToBeSanitized, clustersIssuesConditions);
 
         String resultString = markVmsAsRetired(fileToBeSanitized,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.id in [" + vmsInvalidElementIds+ "])]");
         resultString = markVmsAsRetired(resultString,"$.ManageIQ::Providers::Vmware::InfraManager[*].vms[?(@.host.ems_ref in [" + hostsInvalidElementIds+ "])]");
