@@ -40,15 +40,20 @@ public class XavierPayloadSanitizer
             }
         });
 
+        String jsonIssuesConditions;
+
         if(issuesConditionsForJSONFileName == null || issuesConditionsForJSONFileName.equals(""))
         {
-            URL url = XavierPayloadSanitizer.class.getClassLoader().getResource("issues_conditions.txt");
-            issuesConditionsForJSONFileName = url.getPath();
+            jsonIssuesConditions = getShippedIssuesConditions();
+
+        }
+        else
+        {
+            jsonIssuesConditions = readInputFile(issuesConditionsForJSONFileName, "Issues Conditions file ");
         }
 
         String jsonFileToBeSanitized = readInputFile(inputFileName, "Input file to sanitize ");
 
-        String jsonIssuesConditions = readInputFile(issuesConditionsForJSONFileName, "Issues Conditions file ");
         List<String> vmsIssues = splitConditions(jsonIssuesConditions,"###vms");
         List<String> hostsIssues = splitConditions(jsonIssuesConditions,"###hosts");
         List<String> clustersIssues = splitConditions(jsonIssuesConditions,"###clusters");
