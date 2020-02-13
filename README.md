@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/project-xavier/xavier-payload-sanitizer.svg?branch=master)](https://travis-ci.org/project-xavier/xavier-payload-sanitizer)
+[![codecov](https://codecov.io/gh/project-xavier/xavier-payload-sanitizer/branch/master/graph/badge.svg)](https://codecov.io/gh/project-xavier/xavier-payload-sanitizer)
+
 Sanitizes input payload json files to xavier-analytics. 
 
 Checks input files for error conditions specified by the lines in an input issues conditions file, an example of which is included in the resources folder and can be used as a default.
