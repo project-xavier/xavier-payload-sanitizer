@@ -1,0 +1,12 @@
+language: java
+jdk:
+  - openjdk8
+  - oraclejdk11
+install:
+  - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+jobs:
+  include:
+    - stage: Test
+      script:
+        - mvn test
+        - bash <(curl -s https://codecov.io/bash)
